@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">எட்ஜ்ஏஐ டியூட்டர் லைட்</string>
+    <string name="nav_camera">கேமரா</string>
+    <string name="nav_scan">ஸ்கேன்</string>
+    <string name="nav_chat">அரட்டை</string>
+    <string name="nav_quiz">வினாடி வினா</string>
+    <string name="nav_dashboard">டாஷ்போர்டு</string>
+    <string name="nav_share">பகிர்</string>
+    <string name="nav_settings">அமைப்புகள்</string>
+    <string name="voice_input">குரல் உள்ளீடு</string>
+</resources>

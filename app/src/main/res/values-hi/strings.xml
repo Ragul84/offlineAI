@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">एजएआई ट्यूटर लाइट</string>
+    <string name="nav_camera">कैमरा</string>
+    <string name="nav_scan">स्कैन</string>
+    <string name="nav_chat">चैट</string>
+    <string name="nav_quiz">क्विज</string>
+    <string name="nav_dashboard">डैशबोर्ड</string>
+    <string name="nav_share">शेयर</string>
+    <string name="nav_settings">सेटिंग्स</string>
+    <string name="voice_input">वॉइस इनपुट</string>
+</resources>
