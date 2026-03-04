@@ -36,11 +36,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run debug checks
-        run: ./gradlew --no-daemon --stacktrace :app:checkDebugAarMetadata :app:compileDebugKotlin
-
       - name: Build debug APK
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          -Dorg.gradle.jvmargs="-Xmx3072m -Xms512m -XX:MaxMetaspaceSize=1024m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8"
+          -Dkotlin.daemon.jvm.options="-Xmx2048m"
+          :app:assembleDebug
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
