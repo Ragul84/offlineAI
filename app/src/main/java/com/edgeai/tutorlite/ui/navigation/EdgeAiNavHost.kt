@@ -93,7 +93,7 @@ fun EdgeAiNavHost() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = Route.Camera.value
+            startDestination = Route.Chat.value
         ) {
             composable(Route.Camera.value) { CameraScreen(paddingValues) }
             composable(Route.Scanner.value) { ScannerScreen(paddingValues) }
