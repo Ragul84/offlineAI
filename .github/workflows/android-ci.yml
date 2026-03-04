@@ -56,7 +56,14 @@ jobs:
         run: ./gradlew --stop || true
 
       - name: Build debug APK
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          -Dorg.gradle.jvmargs="-Xmx5632m -Xms1024m -XX:MaxMetaspaceSize=2048m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8"
+          -Dkotlin.daemon.jvm.options=-Xmx3584m
+          -Dorg.gradle.workers.max=1
+          -Dkotlin.compiler.execution.strategy=daemon
+          -Dkotlin.incremental=false
+          :app:assembleDebug
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
