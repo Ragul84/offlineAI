@@ -2,6 +2,7 @@
     <string name="app_name">EdgeAI Tutor Lite</string>
     <string name="nav_camera">Camera</string>
     <string name="nav_scan">Scan</string>
+    <string name="nav_learn">Learn</string>
     <string name="nav_chat">Chat</string>
     <string name="nav_quiz">Quiz</string>
     <string name="nav_dashboard">Dashboard</string>
