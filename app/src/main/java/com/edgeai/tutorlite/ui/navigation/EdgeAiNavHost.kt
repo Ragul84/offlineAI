@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.edgeai.tutorlite.R
+import com.edgeai.tutorlite.domain.model.ModelVariant
 import com.edgeai.tutorlite.ui.screens.camera.CameraScreen
 import com.edgeai.tutorlite.ui.screens.chat.ChatScreen
 import com.edgeai.tutorlite.ui.screens.dashboard.DashboardScreen
@@ -38,6 +39,7 @@ import com.edgeai.tutorlite.ui.screens.onboarding.OnboardingScreen
 import com.edgeai.tutorlite.ui.screens.privacy.PrivacyProofScreen
 import com.edgeai.tutorlite.ui.screens.quiz.QuizScreen
 import com.edgeai.tutorlite.ui.screens.scanner.ScannerScreen
+import com.edgeai.tutorlite.ui.screens.setup.ModelSetupScreen
 import com.edgeai.tutorlite.ui.screens.settings.SettingsScreen
 import com.edgeai.tutorlite.ui.screens.share.ShareScreen
 
@@ -47,9 +49,10 @@ fun EdgeAiNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
     var onboardingDone by remember { mutableStateOf(readOnboardingDone(context)) }
+    val hasModel = remember { hasAnyModelDownloaded(context) }
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val tabs = listOf(Route.Learn, Route.Chat, Route.Dashboard)
-    val showTopBar = currentRoute != Route.Onboarding.value
+    val showTopBar = currentRoute != Route.Onboarding.value && currentRoute != Route.Setup.value
     val showBottomBar = currentRoute in tabs.map { it.value }
     val canOpenSettings = currentRoute in tabs.map { it.value }
 
@@ -107,15 +110,29 @@ fun EdgeAiNavHost() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = if (onboardingDone) Route.Chat.value else Route.Onboarding.value
+            startDestination = when {
+                !onboardingDone -> Route.Onboarding.value
+                !hasModel -> Route.Setup.value
+                else -> Route.Chat.value
+            }
         ) {
             composable(Route.Onboarding.value) {
                 OnboardingScreen(
                     onContinue = {
                         setOnboardingDone(context)
                         onboardingDone = true
-                        navController.navigate(Route.Chat.value) {
+                        navController.navigate(Route.Setup.value) {
                             popUpTo(Route.Onboarding.value) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(Route.Setup.value) {
+                ModelSetupScreen(
+                    paddingValues = paddingValues,
+                    onContinue = {
+                        navController.navigate(Route.Chat.value) {
+                            popUpTo(Route.Setup.value) { inclusive = true }
                         }
                     }
                 )
@@ -144,4 +161,11 @@ private fun setOnboardingDone(context: Context) {
         .edit()
         .putBoolean("onboarding_done", true)
         .apply()
+}
+
+private fun hasAnyModelDownloaded(context: Context): Boolean {
+    val modelDir = context.filesDir.resolve("models")
+    return ModelVariant.entries.any { variant ->
+        modelDir.resolve(variant.fileName).exists()
+    }
 }
