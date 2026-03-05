@@ -56,12 +56,18 @@ class ModelDownloader @Inject constructor(
                 _state.value = DownloadState(isDownloading = true, progressPercent = 0)
                 val sourceUrl = ModelCatalog.huggingFaceUrls.getValue(model)
 
-                // Placeholder native download flow. Replace with gated artifact URL + checksum validation.
                 val connection = URL(sourceUrl).openConnection() as HttpURLConnection
                 connection.connectTimeout = 20_000
-                connection.readTimeout = 30_000
+                connection.readTimeout = 60_000
                 connection.requestMethod = "GET"
+                connection.instanceFollowRedirects = true
+                connection.setRequestProperty("User-Agent", "EdgeAITutorLite/1.0 Android")
                 connection.connect()
+
+                val responseCode = connection.responseCode
+                if (responseCode !in 200..299) {
+                    throw IllegalStateException("HTTP $responseCode ${connection.responseMessage}")
+                }
 
                 val total = connection.contentLengthLong.coerceAtLeast(1L)
                 connection.inputStream.use { input ->
@@ -79,8 +85,10 @@ class ModelDownloader @Inject constructor(
                 }
                 _state.value = DownloadState(isDownloading = false, progressPercent = 100)
                 return@withContext true
-            } catch (_: Throwable) {
-                _state.value = DownloadState(errorMessage = "Retry ${attempt + 1} failed for ${model.name}")
+            } catch (t: Throwable) {
+                targetFile.delete()
+                val reason = t.message?.take(120) ?: t::class.simpleName.orEmpty()
+                _state.value = DownloadState(errorMessage = "Retry ${attempt + 1} failed: $reason")
                 delay(500L)
             }
         }
