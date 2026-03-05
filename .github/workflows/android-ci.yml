@@ -54,18 +54,36 @@ jobs:
       - name: Stop any stale Gradle daemons
         run: ./gradlew --stop || true
 
-      - name: Build debug APK
-        run: >
-          ./gradlew --no-daemon --stacktrace --console=plain
-          -Dorg.gradle.jvmargs="-Xmx5632m -Xms512m -XX:MaxMetaspaceSize=2048m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8"
-          -Dorg.gradle.workers.max=1
-          -Dkotlin.compiler.execution.strategy=in-process
-          -Dkotlin.incremental=false
-          :app:assembleDebug
+      - name: Build debug APK (capture full log)
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace --console=plain \
+            -Dorg.gradle.jvmargs="-Xmx5632m -Xms512m -XX:MaxMetaspaceSize=2048m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8" \
+            -Dorg.gradle.workers.max=1 \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -Dkotlin.incremental=false \
+            :app:assembleDebug 2>&1 | tee gradle-build.log
+
+      - name: Show Kotlin compile errors (if any)
+        if: failure()
+        run: |
+          echo "=== First Kotlin error lines ==="
+          grep -n "^e: " gradle-build.log | head -n 40 || true
+          echo "=== Task failure summary ==="
+          grep -n "Compilation error\|Execution failed for task\|BUILD FAILED" gradle-build.log | head -n 40 || true
 
       - name: Upload debug APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: edgeai-tutor-lite-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Upload build log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edgeai-gradle-build-log
+          path: gradle-build.log
+          if-no-files-found: warn
