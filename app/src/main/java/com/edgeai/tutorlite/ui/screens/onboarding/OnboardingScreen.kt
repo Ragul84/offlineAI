@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -45,17 +48,17 @@ fun OnboardingScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "EdgeAI Tutor Lite",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Text(text = "EDGEAI", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        Text(text = "Your offline study companion", style = MaterialTheme.typography.headlineMedium)
         Text(
             text = "Built for India: offline tutor for budget Android phones.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Card(shape = RoundedCornerShape(20.dp)) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.86f))
+        ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 FeatureRow(Icons.Default.CloudOff, "Works offline after model download")
                 FeatureRow(Icons.Default.Lock, "Private by default. Your data stays on device")
@@ -63,11 +66,17 @@ fun OnboardingScreen(
             }
         }
         Spacer(modifier = Modifier.weight(1f))
-        Button(
+        ElevatedButton(
             onClick = onContinue,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Get Started")
+        }
+        Button(
+            onClick = onContinue,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Skip Intro")
         }
     }
 }
@@ -85,4 +94,3 @@ private fun FeatureRow(
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
     }
 }
-
