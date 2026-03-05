@@ -45,10 +45,9 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           cat >> ~/.gradle/gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx3072m -Xms1024m -XX:MaxMetaspaceSize=1024m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8
-          kotlin.daemon.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=1024m
+          org.gradle.jvmargs=-Xmx5632m -Xms512m -XX:MaxMetaspaceSize=2048m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8
           org.gradle.workers.max=1
-          kotlin.compiler.execution.strategy=daemon
+          kotlin.compiler.execution.strategy=in-process
           kotlin.incremental=false
           EOF
 
@@ -57,11 +56,10 @@ jobs:
 
       - name: Build debug APK
         run: >
-          ./gradlew --no-daemon --stacktrace
-          -Dorg.gradle.jvmargs="-Xmx5632m -Xms1024m -XX:MaxMetaspaceSize=2048m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8"
-          -Dkotlin.daemon.jvm.options=-Xmx3584m
+          ./gradlew --no-daemon --stacktrace --console=plain
+          -Dorg.gradle.jvmargs="-Xmx5632m -Xms512m -XX:MaxMetaspaceSize=2048m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8"
           -Dorg.gradle.workers.max=1
-          -Dkotlin.compiler.execution.strategy=daemon
+          -Dkotlin.compiler.execution.strategy=in-process
           -Dkotlin.incremental=false
           :app:assembleDebug
 
