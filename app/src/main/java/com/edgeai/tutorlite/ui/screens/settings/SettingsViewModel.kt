@@ -66,15 +66,18 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.analyticsEnabled,
         settingsRepository.selectedLanguage,
         settingsRepository.lowRamModeEnabled,
-        settingsRepository.wifiOnlyDownloads,
-        settingsRepository.streakNotificationsEnabled
-    ) { model, analytics, language, lowRam, wifiOnly, streak ->
+        settingsRepository.wifiOnlyDownloads
+    ) { model, analytics, language, lowRam, wifiOnly ->
         PrefsSnapshot(
             model = model,
             analyticsEnabled = analytics,
             language = language,
             lowRamModeEnabled = lowRam,
             wifiOnlyDownloads = wifiOnly,
+            streakNotificationsEnabled = true
+        )
+    }.combine(settingsRepository.streakNotificationsEnabled) { current, streak ->
+        current.copy(
             streakNotificationsEnabled = streak
         )
     }.stateIn(
