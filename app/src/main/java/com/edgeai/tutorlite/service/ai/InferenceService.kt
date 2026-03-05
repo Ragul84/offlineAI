@@ -33,16 +33,21 @@ class InferenceService @Inject constructor(
             val modelPath = modelFile.absolutePath
             val responseText = when {
                 modelPath.endsWith(".gguf", ignoreCase = true) -> {
-                    check(llamaCppRuntime.isAvailable()) {
-                        "GGUF model requires native llama runtime, which is unavailable in this build."
+                    if (llamaCppRuntime.isAvailable()) {
+                        llamaCppRuntime.run(modelPath, normalizedPrompt)
+                    } else {
+                        buildOfflineFallback(normalizedPrompt, "Native runtime unavailable")
                     }
-                    llamaCppRuntime.run(modelPath, normalizedPrompt)
                 }
                 modelPath.endsWith(".onnx", ignoreCase = true) -> {
-                    onnxRuntimeEngine.initialize(modelPath)
-                    onnxRuntimeEngine.run(normalizedPrompt)
+                    runCatching {
+                        onnxRuntimeEngine.initialize(modelPath)
+                        onnxRuntimeEngine.run(normalizedPrompt)
+                    }.getOrElse {
+                        buildOfflineFallback(normalizedPrompt, "ONNX generation unavailable")
+                    }
                 }
-                else -> error("Unsupported model format for $modelPath")
+                else -> buildOfflineFallback(normalizedPrompt, "Unsupported model format")
             }
             TutorResponse(
                 text = responseText,
@@ -64,6 +69,18 @@ class InferenceService @Inject constructor(
         if (responseText.isBlank()) return 0.0f
         if (responseText.length < 12) return 0.2f
         return 0.72f
+    }
+
+    private fun buildOfflineFallback(prompt: TutorPrompt, reason: String): String {
+        val cleaned = prompt.prompt.trim().ifBlank { "Share your question." }
+        return """
+            Offline fallback mode ($reason)
+            1) I understood your question: "$cleaned"
+            2) Break it into known facts and unknowns.
+            3) Solve step-by-step in simple language.
+            4) Verify the final answer with one quick check.
+            5) Ask me to explain in Tamil/Hindi/English.
+        """.trimIndent()
     }
 
     companion object {

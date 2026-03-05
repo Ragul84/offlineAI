@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +36,28 @@ fun QuizScreen(paddingValues: PaddingValues, viewModel: QuizViewModel = hiltView
         Text("Flashcards source: ${state.sourceLabel}", style = MaterialTheme.typography.bodySmall)
         LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
 
+        state.quizQuestion?.let { question ->
+            Text("Quick Quiz", style = MaterialTheme.typography.titleMedium)
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(question.prompt, style = MaterialTheme.typography.titleSmall)
+                    question.options.forEachIndexed { index, option ->
+                        OutlinedButton(
+                            onClick = { viewModel.selectAnswer(index) },
+                            enabled = !question.submitted,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(option)
+                        }
+                    }
+                }
+            }
+            state.quizResult?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+            OutlinedButton(onClick = viewModel::nextQuestion, modifier = Modifier.fillMaxWidth()) {
+                Text("Next Question")
+            }
+        }
+
         Text("Flashcards", style = MaterialTheme.typography.titleMedium)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(state.flashcards) { flashcard ->
@@ -46,9 +68,6 @@ fun QuizScreen(paddingValues: PaddingValues, viewModel: QuizViewModel = hiltView
                     }
                 }
             }
-        }
-        Button(onClick = { viewModel.markQuizCompleted(78) }, modifier = Modifier.fillMaxWidth()) {
-            Text("Complete Quiz")
         }
     }
 }

@@ -19,6 +19,13 @@ class QuizViewModel @Inject constructor(
     private val studyPipelineStore: StudyPipelineStore
 ) : ViewModel() {
     data class Flashcard(val front: String, val back: String)
+    data class QuizQuestion(
+        val prompt: String,
+        val options: List<String>,
+        val correctIndex: Int,
+        val selectedIndex: Int? = null,
+        val submitted: Boolean = false
+    )
 
     data class UiState(
         val streak: Int = 4,
@@ -28,7 +35,9 @@ class QuizViewModel @Inject constructor(
             Flashcard("What is photosynthesis?", "Plants convert light into energy."),
             Flashcard("2x + 4 = 10", "x = 3"),
             Flashcard("Capital of Tamil Nadu", "Chennai")
-        )
+        ),
+        val quizQuestion: QuizQuestion? = null,
+        val quizResult: String? = null
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -38,27 +47,54 @@ class QuizViewModel @Inject constructor(
         viewModelScope.launch {
             studyPipelineStore.latestArtifact.collectLatest { artifact ->
                 if (artifact == null) return@collectLatest
+                val cards = generateFlashcards(artifact.processedOutput)
                 _uiState.update {
                     it.copy(
                         sourceLabel = "${artifact.source.uppercase()} - ${artifact.subject}",
-                        flashcards = generateFlashcards(artifact.processedOutput)
+                        flashcards = cards,
+                        quizQuestion = buildQuestion(cards),
+                        quizResult = null
                     )
                 }
             }
         }
+        _uiState.update { it.copy(quizQuestion = buildQuestion(it.flashcards)) }
     }
 
-    fun markQuizCompleted(score: Int) {
+    fun selectAnswer(index: Int) {
+        val current = _uiState.value.quizQuestion ?: return
+        if (current.submitted) return
+        val isCorrect = index == current.correctIndex
+        _uiState.update {
+            it.copy(
+                quizQuestion = current.copy(
+                    selectedIndex = index,
+                    submitted = true
+                ),
+                quizResult = if (isCorrect) "Correct! Streak updated." else "Not correct. Try next."
+            )
+        }
+
+        if (!isCorrect) return
         viewModelScope.launch {
-            val clamped = score.coerceIn(0, 100)
+            val score = 80
             _uiState.update {
                 it.copy(
                     streak = it.streak + 1,
-                    progress = ((it.progress * 100f + clamped) / 200f).coerceIn(0f, 1f)
+                    progress = ((it.progress * 100f + score) / 200f).coerceIn(0f, 1f)
                 )
             }
-            analyticsService.logEvent("quiz_completed", "Quiz", clamped.toDouble())
-            analyticsService.logStudySession("Quiz", durationMinutes = 5, score = clamped)
+            analyticsService.logEvent("quiz_completed", "Quiz", score.toDouble())
+            analyticsService.logStudySession("Quiz", durationMinutes = 5, score = score)
+        }
+    }
+
+    fun nextQuestion() {
+        _uiState.update {
+            it.copy(
+                quizQuestion = buildQuestion(it.flashcards),
+                quizResult = null
+            )
         }
     }
 
@@ -78,5 +114,20 @@ class QuizViewModel @Inject constructor(
                 back = sentence.take(180)
             )
         }
+    }
+
+    private fun buildQuestion(cards: List<Flashcard>): QuizQuestion {
+        val primary = cards.firstOrNull() ?: Flashcard("No question", "No answer")
+        val distractors = cards.drop(1).map { it.back }.filter { it != primary.back }.take(3).toMutableList()
+        while (distractors.size < 3) {
+            distractors.add("Review notes and try again")
+        }
+        val options = (distractors + primary.back).shuffled()
+        val correctIndex = options.indexOf(primary.back)
+        return QuizQuestion(
+            prompt = primary.front,
+            options = options,
+            correctIndex = correctIndex
+        )
     }
 }

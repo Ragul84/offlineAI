@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -62,12 +63,17 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             val model = settingsRepository.selectedModel.value
-            val result = inferenceService.runPrompt(
-                TutorPrompt(prompt = draft, subject = "General", mode = "chat"),
-                model
-            )
+            val result = runCatching {
+                withTimeout(20_000L) {
+                    inferenceService.runPrompt(
+                        TutorPrompt(prompt = draft, subject = "General", mode = "chat"),
+                        model
+                    )
+                }
+            }.getOrElse { Result.failure(it) }
 
-            val text = result.getOrNull()?.text ?: "I could not process that offline."
+            val text = result.getOrNull()?.text ?: (result.exceptionOrNull()?.message?.take(120)
+                ?: "I could not process that offline.")
             _uiState.update {
                 it.copy(messages = it.messages + Message(text, false), loading = false)
             }
